@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Diário de Triatlo</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e2f; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-container { background-color: #2a2a40; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; width: 100%; max-width: 350px; }
+        h2 { color: #00d2ff; margin-bottom: 5px; }
+        p { color: #8892b0; font-size: 14px; margin-bottom: 25px; }
+        input { width: 90%; padding: 12px; margin: 10px 0; border: 1px solid #44475a; border-radius: 5px; background-color: #1e1e2f; color: #fff; outline: none; }
+        input:focus { border-color: #00d2ff; }
+        button { background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%); color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 98%; font-weight: bold; font-size: 16px; margin-top: 15px; transition: 0.3s; }
+        button:hover { opacity: 0.9; transform: scale(1.02); }
+        .error-msg { color: #ff5555; font-size: 13px; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>Diário de Triatlo</h2>
+        <p>Acesso Restrito ao Atleta</p>
+        
+        <input type="text" id="username" placeholder="Usuário (ex: atleta)" required>
+        <input type="password" id="password" placeholder="Senha" required>
+        
+        <div id="error-msg" class="error-msg">Acesso negado. Caracteres especiais são bloqueados por segurança.</div>
+        
+        <button onclick="realizarLogin()">Entrar no Sistema</button>
+    </div>
+
+    <script>
+        function realizarLogin() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+            
+            // Mitigação OWASP 1: Sanitização contra Injection/XSS (Permite apenas letras e números)
+            const regexSeguranca = /^[a-zA-Z0-9]+$/; 
+            
+            if(!regexSeguranca.test(user) || !regexSeguranca.test(pass) || user === "" || pass === "") {
+                errorMsg.style.display = 'block';
+                return;
+            }
+            
+            // Mitigação OWASP 2: Broken Access Control (Simulação de Token de Sessão)
+            sessionStorage.setItem('tokenAtleta', 'secure-hash-889922'); 
+            
+            // Redireciona para a página interna da planilha
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>
