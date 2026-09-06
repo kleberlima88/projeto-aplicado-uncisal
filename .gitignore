@@ -1,0 +1,25 @@
+# ----------------------------------------------------
+# Proteção de Dados Sensíveis - Eixo 2
+# ----------------------------------------------------
+
+# Senhas e Variáveis de Ambiente
+.env
+.env.local
+.env.*
+
+# Chaves de Nuvem e SSH (Regra estrita do projeto)
+*.pem
+*.key
+*.cer
+credentials.json
+id_rsa
+id_ed25519
+
+# Bancos de dados locais
+*.sqlite
+*.sqlite3
+*.db
+
+# Arquivos temporários de sistema
+.DS_Store
+Thumbs.db
