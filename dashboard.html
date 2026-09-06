@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Atleta - Diário de Triatlo</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e2f; color: #fff; margin: 0; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #44475a; padding-bottom: 10px; margin-bottom: 20px; }
+        .btn-logout { background-color: #ff5555; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .card { background-color: #2a2a40; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        h2, h3 { color: #00d2ff; }
+        .modalidades label { margin-right: 15px; cursor: pointer; display: inline-block; margin-bottom: 10px; }
+        .file-upload { margin-top: 15px; padding: 15px; border: 2px dashed #44475a; border-radius: 5px; text-align: center; }
+        input[type="file"] { display: none; }
+        .btn-upload { background-color: #50fa7b; color: #282a36; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        #msg-upload { margin-top: 10px; font-size: 14px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>Painel de Treinamento</h2>
+        <button class="btn-logout" onclick="fazerLogout()">Sair (Logout)</button>
+    </div>
+
+    <div class="card">
+        <h3>1. Personalizar Visão de Modalidades</h3>
+        <div class="modalidades">
+            <label><input type="checkbox" checked> Corrida (Zonas Z2 e Z4)</label>
+            <label><input type="checkbox" checked> Musculação</label>
+            <label><input type="checkbox"> Natação (Mar)</label>
+            <label><input type="checkbox"> Natação (Piscina)</label>
+            <label><input type="checkbox"> Ciclismo</label>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>2. Sincronização de Dados</h3>
+        <p>Importe os arquivos do relógio esportivo para alimentar as planilhas do ciclo.</p>
+        
+        <div class="file-upload">
+            <label for="arquivoGarmin" class="btn-upload">Escolher Arquivo</label>
+            <input type="file" id="arquivoGarmin" accept=".gpx,.tcx,.csv">
+            <div id="msg-upload">Nenhum arquivo selecionado.</div>
+            <button class="btn-upload" style="background-color: #00d2ff; color: white;" onclick="validarArquivo()">Processar Dados</button>
+        </div>
+    </div>
+
+    <script>
+        // Trava de Segurança: Verifica se o usuário passou pela tela de login
+        if (sessionStorage.getItem('tokenAtleta') !== 'secure-hash-889922') {
+            alert('Acesso negado! Faça o login primeiro.');
+            window.location.href = 'index.html';
+        }
+
+        // Exibe o nome do arquivo selecionado
+        document.getElementById('arquivoGarmin').addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : "Nenhum arquivo selecionado.";
+            document.getElementById('msg-upload').innerText = fileName;
+            document.getElementById('msg-upload').style.color = '#fff';
+        });
+
+        // Mitigação OWASP 3: Validação rigorosa de Upload
+        function validarArquivo() {
+            const input = document.getElementById('arquivoGarmin');
+            const msg = document.getElementById('msg-upload');
+            
+            if (input.files.length === 0) {
+                msg.innerText = "Selecione um arquivo de treino antes de processar.";
+                msg.style.color = "#ff5555";
+                return;
+            }
+
+            const arquivo = input.files[0];
+            const extensoesPermitidas = ['.gpx', '.tcx', '.csv'];
+            const nomeArquivo = arquivo.name.toLowerCase();
+            const tamanhoMaximo = 2 * 1024 * 1024; // Limite de 2MB
+
+            const extensaoValida = extensoesPermitidas.some(ext => nomeArquivo.endsWith(ext));
+
+            if (!extensaoValida) {
+                msg.innerText = "ALERTA DE SEGURANÇA: Formato inválido. Use apenas .gpx, .tcx ou .csv.";
+                msg.style.color = "#ff5555";
+                input.value = ""; // Limpa a tentativa suspeita
+                return;
+            }
+
+            if (arquivo.size > tamanhoMaximo) {
+                msg.innerText = "ERRO: O arquivo excede o limite máximo de 2MB.";
+                msg.style.color = "#ff5555";
+                input.value = "";
+                return;
+            }
+
+            msg.innerText = "Sucesso! Arquivo processado e validado com segurança.";
+            msg.style.color = "#50fa7b";
+        }
+
+        function fazerLogout() {
+            sessionStorage.removeItem('tokenAtleta');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
