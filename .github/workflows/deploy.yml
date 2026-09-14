@@ -24,5 +24,10 @@ jobs:
             git fetch --all
             git clean -fd
             git reset --hard origin/main
+            
+            # --- NOVA INSTRUÇÃO: Instala as bibliotecas do requirements.txt ---
+            if [ -d "venv" ]; then source venv/bin/activate; elif [ -d "env" ]; then source env/bin/activate; fi
+            pip3 install -r requirements.txt
+            
             sudo systemctl restart nginx || true
             sudo systemctl restart diario-triatlo
