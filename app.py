@@ -6,6 +6,10 @@ import json
 import csv
 import html
 from datetime import datetime
+import google.generativeai as genai
+
+# --- CONFIGURAÇÃO DA IA (COLE SUA CHAVE AQUI) ---
+genai.configure(api_key="COLE_SUA_CHAVE_GERADA_AQUI")
 
 try:
     import pandas as pd
@@ -185,7 +189,15 @@ Regra 1: Se os batimentos indicarem fadiga excessiva, sugira um microciclo regen
 Regra 2: Se o volume e os paces nas zonas Z2 e Z4 foram cumpridos com eficiência, aplique sobrecarga progressiva e aumente o volume do próximo longão em 10%.
 Gere a nova planilha da semana."""
             
-            return render_template('analise.html', prompt=prompt_ia, tabela=tabela_html)
+            # --- INTEGRAÇÃO COM A INTELIGÊNCIA ARTIFICIAL (GEMINI) ---
+            try:
+                modelo = genai.GenerativeModel('gemini-1.5-flash')
+                resposta = modelo.generate_content(prompt_ia)
+                treino_gerado = resposta.text
+            except Exception as erro_ia:
+                treino_gerado = f"Erro ao contatar a IA: {str(erro_ia)}"
+            
+            return render_template('analise.html', prompt=prompt_ia, tabela=tabela_html, treino=treino_gerado)
             
         except Exception as e:
             flash(f'Erro ao processar os dados da planilha: {str(e)}', 'error')
