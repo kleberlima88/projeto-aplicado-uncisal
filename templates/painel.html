@@ -2,57 +2,74 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel - Diário de Triatlo</title>
+    <title>Diário de Triatlo - Treinamento</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }
-        .header-top { display: flex; justify-content: flex-end; margin-bottom: 10px; }
-        .logout-btn { color: red; font-weight: bold; text-decoration: none; }
-        .container { max-width: 700px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h2 { text-align: center; margin-top: 0; }
-        .status-text { text-align: center; margin-bottom: 30px; font-size: 16px; }
-        .info-box { background-color: #fdf5d3; padding: 20px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; line-height: 1.5; color: #5a4a00; }
-        .info-box h4 { margin-top: 0; color: #b8860b; }
-        .upload-box { border: 1px dashed #ccc; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px; background-color: #fafafa; }
-        .upload-btn { background-color: #e74c3c; color: white; border: none; padding: 15px; width: 100%; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; }
-        .upload-btn:hover { background-color: #c0392b; }
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 600px; margin: auto; text-align: center; }
+        .btn { padding: 15px 20px; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; margin-top: 10px; }
+        .btn-cooper { background-color: #e74c3c; } 
+        .btn-rotina { background-color: #2ecc71; } 
+        .upload-area { margin: 20px 0; padding: 15px; border: 2px dashed #ccc; background-color: #fafafa; border-radius: 5px; }
+        .flash-msg { padding: 10px; margin-bottom: 15px; border-radius: 5px; font-weight: bold; }
+        .flash-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .flash-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .regras-cooper { background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; border: 1px solid #ffeeba; text-align: left; font-size: 14px; margin-bottom: 20px;}
     </style>
 </head>
 <body>
-    <div class="header-top">
-        <a href="/logout" class="logout-btn">Sair (Logout)</a>
-    </div>
     
-    <div class="container">
+    <a href="/logout" style="float: right; color: red; text-decoration: none; font-weight: bold;">Sair (Logout)</a>
+
+    <div class="card">
         <h2>Seu Painel de Treinamento</h2>
-        <div class="status-text">
-            <strong>Status:</strong> Bem-vindo à periodização! Para iniciarmos, realize o Teste de Cooper de 12 minutos.
+
+        <!-- Mensagens de Erro/Sucesso (Alertas) -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash-msg {% if category == 'error' %}flash-error{% else %}flash-success{% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <!-- Status do Macrociclo (90 dias) injetado pelo app.py -->
+        <div style="background-color: #e8f4fd; padding: 10px; border-radius: 5px; margin-bottom: 20px; color: #0056b3; font-weight: bold;">
+            {{ mensagem_status }}
         </div>
 
-        <div class="info-box">
-            <h4>🏃 TESTE DE 12'</h4>
+        <!-- Se precisar de teste, mostra as regras e o upload -->
+        {% if precisa_novo_teste %}
+        <div class="regras-cooper">
+            <h4 style="margin-top: 0; text-align: center;">🏃 TESTE DE 12'</h4>
             <p><strong>ESSE TESTE SERÁ A BASE PARA CRIAÇÃO DAS SUAS ZONAS DE TREINAMENTO.</strong></p>
             <p>É IMPORTANTE ESTAR DESCANSADO PARA REALIZAÇÃO DO MESMO. PROCURE REALIZAR EM UM LOCAL PLANO E SEM INTERRUPÇÕES.</p>
-            <p>PARA DEFINIÇÃO DAS ZONAS, SÓ PRECISO DO REGISTRO DOS 12', COM AS INFORMAÇÕES DA DISTÂNCIA PERCORRIDA E PACE MÉDIO. FC MÉDIA E MÁXIMA SÃO IMPORTANTES.</p>
             <p><strong>AQUECIMENTO:</strong></p>
             <ul>
                 <li>5 MINUTOS TROTANDO.</li>
-                <li>8 X 20m ACELERANDO PROGRESSIVO, MAS NÃO MÁXIMO. RETORNE CAMINHANDO.</li>
-                <li>HIDRATAÇÃO.</li>
+                <li>8 X 20m ACELERANDO PROGRESSIVO.</li>
                 <li>DESCANSAR DE 3 A 5' ANTES DE INICIAR OS 12 MINUTOS.</li>
             </ul>
-            <p><strong>12':</strong></p>
-            <p>REALIZAR EM ESFORÇO MÁXIMO. A SENSAÇÃO FINAL DEVE SER DE EXAUSTÃO TOTAL. CUIDADO PARA NÃO COMEÇAR MUITO FORTE; TENTE SER CONSTANTE.</p>
-            <p><strong>BOM TESTE!</strong></p>
+            <p>REALIZAR EM ESFORÇO MÁXIMO. BOM TESTE!</p>
         </div>
 
         <form action="/upload" method="post" enctype="multipart/form-data">
-            <div class="upload-box">
+            <div class="upload-area">
                 <p><strong>Selecione o arquivo do Garmin (.csv):</strong></p>
-                <input type="file" name="file" accept=".csv" required>
+                <input type="file" name="file" accept=".csv" required style="margin-top: 10px;">
             </div>
-            <button type="submit" class="upload-btn">⚙ Fazer Upload do Teste de Cooper (12 min)</button>
+            <button type="submit" class="btn btn-cooper">⚙ Fazer Upload do Teste (12 min)</button>
         </form>
+        
+        <!-- Se NÃO precisar de teste, esconde o upload -->
+        {% else %}
+        <div style="padding: 20px;">
+            <p>Você está no meio do seu macrociclo de treinamento.</p>
+            <p>Continue focando nos seus treinos regulares e nos vemos na próxima reavaliação!</p>
+        </div>
+        {% endif %}
+
     </div>
 </body>
 </html>
