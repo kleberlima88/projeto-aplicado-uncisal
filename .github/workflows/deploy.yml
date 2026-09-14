@@ -17,10 +17,10 @@ jobs:
           key: ${{ secrets.KEY }}
           script: |
             cd /home/ubuntu
-            if [ ! -d "diario-triatlo" ]; then
-              git clone https://github.com/kleberlima88/projeto-aplicado-uncisal.git diario-triatlo
+            if [ ! -d "projeto-aplicado-uncisal" ]; then
+              git clone https://github.com/kleberlima88/projeto-aplicado-uncisal.git projeto-aplicado-uncisal
             fi
-            cd diario-triatlo
+            cd projeto-aplicado-uncisal
             git fetch --all
             git clean -fd
             git reset --hard origin/main
