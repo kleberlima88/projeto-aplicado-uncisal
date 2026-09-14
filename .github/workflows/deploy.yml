@@ -14,7 +14,8 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY }}
           script: |
-            cd /home/ubuntu/projeto-aplicado-uncisal
-            git pull origin main
-            /home/ubuntu/projeto-aplicado-uncisal/venv/bin/pip install -r requirements.txt
-            sudo systemctl restart diario-triatlo.service
+            cd /home/ubuntu/diario-triatlo
+            git fetch --all
+            git clean -fd
+            git reset --hard origin/main
+            sudo systemctl restart diario
