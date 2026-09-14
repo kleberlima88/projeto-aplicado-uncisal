@@ -54,12 +54,31 @@
             <p>REALIZAR EM ESFORÇO MÁXIMO. BOM TESTE!</p>
         </div>
 
-        <form action="/upload" method="post" enctype="multipart/form-data">
+        <form <form action="/upload" method="post" enctype="multipart/form-data">
             <div class="upload-area">
+                <p><strong>Configuração do Macrociclo (Preencha se for o primeiro treino):</strong></p>
+                <select name="distancia_alvo" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ccc;">
+                    <option value="">-- Selecione o Objetivo (Deixe vazio se for apenas acompanhamento) --</option>
+                    <option value="5">5 km</option>
+                    <option value="10">10 km</option>
+                    <option value="21">Meia Maratona (21 km)</option>
+                    <option value="42">Maratona (42 km)</option>
+                </select>
+                
+                <select name="dias_treino" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ccc;">
+                    <option value="">-- Dias disponíveis por semana --</option>
+                    <option value="3">3 dias</option>
+                    <option value="4">4 dias</option>
+                    <option value="5">5 dias</option>
+                    <option value="6">6 dias</option>
+                </select>
+
+                <hr style="border: 0; border-top: 1px solid #ddd; margin: 15px 0;">
+
                 <p><strong>Selecione o arquivo do Garmin (.csv):</strong></p>
-                <input type="file" name="file" accept=".csv" required style="margin-top: 10px;">
+                <input type="file" name="file" accept=".csv" required style="margin-top: 5px;">
             </div>
-            <button type="submit" class="btn btn-cooper">⚙ Fazer Upload do Teste (12 min)</button>
+            <button type="submit" class="btn btn-cooper">⚙ Fazer Upload e Gerar Treino</button>
         </form>
         
         <!-- Se NÃO precisar de teste, esconde o upload -->
