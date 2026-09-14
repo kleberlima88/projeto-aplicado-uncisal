@@ -160,10 +160,10 @@ def upload_file():
                 tb_html = "".join("<tr>" + "".join(f"<td>{html.escape(str(cell))}</td>" for cell in r) + "</tr>" for r in data_rows)
                 tabela_html = f'<table class="tabela-garmin"><thead><tr>{th_html}</tr></thead><tbody>{tb_html}</tbody></table>'
             
-           # --- LÓGICA DE PROMPTS DINÂMICOS ---
-                if distancia_alvo and dias_treino:
-                    # PROMPT 1: Primeiro treino / Início de Macrociclo
-                    prompt_ia = f"""Atue como um treinador especialista em periodização de triatlo e corrida.
+            # --- LÓGICA DE PROMPTS DINÂMICOS ---
+            if distancia_alvo and dias_treino:
+                # PROMPT 1: Primeiro treino / Início de Macrociclo
+                prompt_ia = f"""Atue como um treinador especialista em periodização de triatlo e corrida.
 O atleta definiu como objetivo a distância de {distancia_alvo} km e possui {dias_treino} dias disponíveis na semana para treinar.
 Ele acabou de realizar um Teste de Cooper de 12 minutos com os seguintes resultados:
 - Distância percorrida: {distancia_total} km
@@ -171,10 +171,10 @@ Ele acabou de realizar um Teste de Cooper de 12 minutos com os seguintes resulta
 - Frequência Cardíaca Média: {fc_media} bpm
 
 Com base nesses dados, calcule as zonas de treinamento (Z1 a Z5) e monte a primeira semana (microciclo) de treinos focada em adaptação anatômica."""
-                
-                else:
-                    # PROMPT 2: Acompanhamento / Ajuste Semanal
-                    prompt_ia = f"""Atue como um treinador especialista em periodização de triatlo e corrida.
+            
+            else:
+                # PROMPT 2: Acompanhamento / Ajuste Semanal
+                prompt_ia = f"""Atue como um treinador especialista em periodização de triatlo e corrida.
 O atleta submeteu os seguintes dados do último treino executado:
 - Distância: {distancia_total} km
 - Frequência Cardíaca Máxima: {fc_maxima} bpm
@@ -184,7 +184,7 @@ Analise o cumprimento das zonas de intensidade:
 Regra 1: Se os batimentos indicarem fadiga excessiva, sugira um microciclo regenerativo mantendo o esforço estritamente na Zona Z2.
 Regra 2: Se o volume e os paces nas zonas Z2 e Z4 foram cumpridos com eficiência, aplique sobrecarga progressiva e aumente o volume do próximo longão em 10%.
 Gere a nova planilha da semana."""
-                    
+            
             return render_template('analise.html', prompt=prompt_ia, tabela=tabela_html)
             
         except Exception as e:
