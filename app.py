@@ -9,7 +9,7 @@ from datetime import datetime
 import google.generativeai as genai
 
 # --- CONFIGURAÇÃO DA IA (COLE SUA CHAVE AQUI) ---
-genai.configure(api_key="AQ.Ab8RN6JvYbh23-IJXS-XDKtWhdhIg22nQKNFcHIPf7CiahgVfQ")
+genai.configure(api_key="AIzaSyCCd9CxZtGNSXaBOJ_N4HQ7fGfxgY_s6z4")
 
 try:
     import pandas as pd
