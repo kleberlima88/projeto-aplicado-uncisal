@@ -6,14 +6,14 @@
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 600px; margin: auto; text-align: center; }
-        .btn { padding: 15px 20px; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; margin-top: 10px; background-color: #007BFF; }
-        .btn:hover { background-color: #0056b3; }
-        .upload-area { margin: 20px 0; padding: 15px; border: 2px dashed #ccc; background-color: #fafafa; border-radius: 5px; text-align: left; }
+        .btn { padding: 15px 20px; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; margin-top: 10px; }
+        .btn-cooper { background-color: #e74c3c; } 
+        .btn-rotina { background-color: #2ecc71; } 
+        .upload-area { margin: 20px 0; padding: 15px; border: 2px dashed #ccc; background-color: #fafafa; border-radius: 5px; }
         .flash-msg { padding: 10px; margin-bottom: 15px; border-radius: 5px; font-weight: bold; }
         .flash-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .flash-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .regras-cooper { background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; border: 1px solid #ffeeba; text-align: left; font-size: 14px; margin-bottom: 20px;}
-        .status-box { background-color: #e8f4fd; padding: 10px; border-radius: 5px; margin-bottom: 20px; color: #0056b3; font-weight: bold; border: 1px solid #b8daff;}
     </style>
 </head>
 <body>
@@ -22,61 +22,3 @@
 
     <div class="card">
         <h2>Seu Painel de Treinamento</h2>
-
-        <!-- Alertas do Sistema -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="flash-msg {% if category == 'error' %}flash-error{% else %}flash-success{% endif %}">
-                {{ message }}
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
-
-        <!-- Aviso do Macrociclo gerado pelo app.py -->
-        <div class="status-box">
-            {{ mensagem_status }}
-        </div>
-
-        <!-- O aviso do Cooper só aparece se deu 90 dias, MAS o formulário fica livre -->
-        {% if precisa_novo_teste %}
-        <div class="regras-cooper">
-            <h4 style="margin-top: 0; text-align: center;">🏃 FIM DO CICLO: HORA DE REAVALIAR</h4>
-            <p>Para recalibrar seu pace, você pode fazer um <strong>Teste de Cooper de 12'</strong> (preencha as opções abaixo).</p>
-            <p>Se quiser <strong>apenas continuar seus treinos da semana</strong> e fazer o teste depois, basta deixar as opções em branco e enviar o arquivo do treino normal!</p>
-        </div>
-        {% endif %}
-
-        <!-- Formulário ÚNICO e Inteligente -->
-        <form action="/upload" method="post" enctype="multipart/form-data">
-            <div class="upload-area">
-                <p style="margin-top: 0;"><strong>Configuração do Macrociclo:</strong></p>
-                <select name="distancia_alvo" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px solid #ccc;">
-                    <option value="">-- Selecione o Objetivo (Deixe vazio para acompanhamento semanal) --</option>
-                    <option value="5">5 km</option>
-                    <option value="10">10 km</option>
-                    <option value="21">Meia Maratona (21 km)</option>
-                    <option value="42">Maratona (42 km)</option>
-                </select>
-                
-                <select name="dias_treino" style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ccc;">
-                    <option value="">-- Dias de treino (Deixe vazio para acompanhamento semanal) --</option>
-                    <option value="3">3 dias</option>
-                    <option value="4">4 dias</option>
-                    <option value="5">5 dias</option>
-                    <option value="6">6 dias</option>
-                </select>
-
-                <hr style="border: 0; border-top: 1px solid #ddd; margin: 15px 0;">
-
-                <p><strong>Selecione o arquivo do Garmin (.csv):</strong></p>
-                <input type="file" name="file" accept=".csv" required style="width: 100%;">
-            </div>
-            
-            <button type="submit" class="btn">⚙ Processar Arquivo (IA)</button>
-        </form>
-
-    </div>
-</body>
-</html>

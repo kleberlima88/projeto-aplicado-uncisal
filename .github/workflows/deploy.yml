@@ -1,10 +1,8 @@
 name: Deploy to Oracle Cloud
-
 on:
   push:
     branches:
       - main
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,18 +14,8 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY }}
           script: |
-            cd /home/ubuntu
-            if [ ! -d "projeto-aplicado-uncisal" ]; then
-              git clone https://github.com/kleberlima88/projeto-aplicado-uncisal.git projeto-aplicado-uncisal
-            fi
-            cd projeto-aplicado-uncisal
-            git fetch --all
-            git clean -fd
-            git reset --hard origin/main
-            
-            # --- NOVA INSTRUÇÃO: Instala as bibliotecas do requirements.txt ---
-            if [ -d "venv" ]; then source venv/bin/activate; elif [ -d "env" ]; then source env/bin/activate; fi
-            pip3 install -r requirements.txt
-            
-            sudo systemctl restart nginx || true
-            sudo systemctl restart diario-triatlo
+            cd /home/ubuntu/projeto-aplicado-uncisal
+            git remote set-url origin https://github.com/kleberlima88/projeto-aplicado-uncisal.git
+            git pull origin main
+            /home/ubuntu/projeto-aplicado-uncisal/venv/bin/pip install -r requirements.txt
+            sudo systemctl restart diario-triatlo.service

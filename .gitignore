@@ -1,25 +1,17 @@
-# ----------------------------------------------------
-# Proteção de Dados Sensíveis - Eixo 2
-# ----------------------------------------------------
-
-# Senhas e Variáveis de Ambiente
+# Pastas e arquivos do Python (Ambiente Virtual, caches)
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
 .env
-.env.local
-.env.*
 
-# Chaves de Nuvem e SSH (Regra estrita do projeto)
-*.pem
-*.key
-*.cer
-credentials.json
-id_rsa
-id_ed25519
+# Ignorar o nosso "banco de dados" local para evitar vazamento do seu perfil
+dados_usuario.json
 
-# Bancos de dados locais
-*.sqlite
-*.sqlite3
-*.db
-
-# Arquivos temporários de sistema
-.DS_Store
-Thumbs.db
+# Bloqueio ESTRITO de segurança: NUNCA enviar os arquivos de treino para o repositório público
+uploads/
+*.csv
+*.fit
+*.tcx
+*.gpx

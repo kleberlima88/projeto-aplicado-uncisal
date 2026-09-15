@@ -6,10 +6,24 @@ import json
 import csv
 import html
 from datetime import datetime
-import google.generativeai as genai
+from dotenv import load_dotenv
 
-# --- CONFIGURAÇÃO DA IA (COLE SUA CHAVE AQUI) ---
-genai.configure(api_key="AIzaSyCCd9CxZtGNSXaBOJ_N4HQ7fGfxgY_s6z4")
+# Carrega as variáveis de ambiente do arquivo .env
+load_dotenv()
+
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+
+try:
+    from openai import OpenAI
+    HAS_OPENAI = True
+    client = OpenAI(
+        api_key=DEEPSEEK_API_KEY,
+        base_url="https://api.deepseek.com"
+    )
+except Exception:
+    OpenAI = None
+    HAS_OPENAI = False
+    client = None
 
 try:
     import pandas as pd
@@ -102,8 +116,6 @@ def upload_file():
         return redirect('/')
     
     file = request.files['file']
-    distancia_alvo = request.form.get('distancia_alvo')
-    dias_treino = request.form.get('dias_treino')
     
     if file.filename == '':
         flash('Nenhum arquivo foi selecionado.', 'error')
@@ -164,22 +176,9 @@ def upload_file():
                 tb_html = "".join("<tr>" + "".join(f"<td>{html.escape(str(cell))}</td>" for cell in r) + "</tr>" for r in data_rows)
                 tabela_html = f'<table class="tabela-garmin"><thead><tr>{th_html}</tr></thead><tbody>{tb_html}</tbody></table>'
             
-            # --- LÓGICA DE PROMPTS DINÂMICOS ---
-            if distancia_alvo and dias_treino:
-                # PROMPT 1: Primeiro treino / Início de Macrociclo
-                prompt_ia = f"""Atue como um treinador especialista em periodização de triatlo e corrida.
-O atleta definiu como objetivo a distância de {distancia_alvo} km e possui {dias_treino} dias disponíveis na semana para treinar.
-Ele acabou de realizar um Teste de Cooper de 12 minutos com os seguintes resultados:
-- Distância percorrida: {distancia_total} km
-- Frequência Cardíaca Máxima: {fc_maxima} bpm
-- Frequência Cardíaca Média: {fc_media} bpm
-
-Com base nesses dados, calcule as zonas de treinamento (Z1 a Z5) e monte a primeira semana (microciclo) de treinos focada em adaptação anatômica."""
-            
-            else:
-                # PROMPT 2: Acompanhamento / Ajuste Semanal
-                prompt_ia = f"""Atue como um treinador especialista em periodização de triatlo e corrida.
-O atleta submeteu os seguintes dados do último treino executado:
+            prompt_ia = f"""
+Atue como um treinador especialista em periodização de triatlo e corrida.
+O atleta submeteu os seguintes dados executados:
 - Distância: {distancia_total} km
 - Frequência Cardíaca Máxima: {fc_maxima} bpm
 - Frequência Cardíaca Média: {fc_media} bpm
@@ -187,17 +186,40 @@ O atleta submeteu os seguintes dados do último treino executado:
 Analise o cumprimento das zonas de intensidade:
 Regra 1: Se os batimentos indicarem fadiga excessiva, sugira um microciclo regenerativo mantendo o esforço estritamente na Zona Z2.
 Regra 2: Se o volume e os paces nas zonas Z2 e Z4 foram cumpridos com eficiência, aplique sobrecarga progressiva e aumente o volume do próximo longão em 10%.
-Gere a nova planilha da semana."""
-            
-            # --- INTEGRAÇÃO COM A INTELIGÊNCIA ARTIFICIAL (GEMINI) ---
+Gere a nova planilha da semana.
+"""
+
+            # Conexão com a API do DeepSeek usando a biblioteca openai (modelo 'deepseek-chat')
+            analise_ia = None
             try:
-                modelo = genai.GenerativeModel('gemini-1.5-flash')
-                resposta = modelo.generate_content(prompt_ia)
-                treino_gerado = resposta.text
-            except Exception as erro_ia:
-                treino_gerado = f"Erro ao contatar a IA: {str(erro_ia)}"
-            
-            return render_template('analise.html', prompt=prompt_ia, tabela=tabela_html, treino=treino_gerado)
+                if HAS_OPENAI and client is not None:
+                    resposta = client.chat.completions.create(
+                        model="deepseek-chat",
+                        messages=[
+                            {"role": "user", "content": prompt_ia}
+                        ]
+                    )
+                    analise_ia = resposta.choices[0].message.content
+                else:
+                    import urllib.request
+                    req = urllib.request.Request(
+                        "https://api.deepseek.com/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+                            "Content-Type": "application/json"
+                        },
+                        data=json.dumps({
+                            "model": "deepseek-chat",
+                            "messages": [{"role": "user", "content": prompt_ia}]
+                        }).encode("utf-8")
+                    )
+                    with urllib.request.urlopen(req, timeout=30) as resp:
+                        dados_resp = json.loads(resp.read().decode("utf-8"))
+                        analise_ia = dados_resp["choices"][0]["message"]["content"]
+            except Exception as e_ia:
+                flash(f'Aviso da API DeepSeek: {str(e_ia)}', 'error')
+
+            return render_template('analise.html', prompt=prompt_ia, resposta=analise_ia, tabela=tabela_html)
             
         except Exception as e:
             flash(f'Erro ao processar os dados da planilha: {str(e)}', 'error')
