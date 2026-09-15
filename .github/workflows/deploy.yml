@@ -19,3 +19,4 @@ jobs:
             git pull origin main
             /home/ubuntu/projeto-aplicado-uncisal/venv/bin/pip install -r requirements.txt
             sudo systemctl restart diario-triatlo.service
+# forçando um deploy limpo
