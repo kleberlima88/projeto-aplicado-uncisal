@@ -12,7 +12,7 @@ jobs:
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH.KEY }}
+          key: ${{ secrets.CHAVE_ORACLE_NOVA }}
           script: |
             cd /home/ubuntu/projeto-aplicado-uncisal
             git remote set-url origin https://github.com/kleberlima88/projeto-aplicado-uncisal.git
