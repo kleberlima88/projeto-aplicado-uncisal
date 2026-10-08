@@ -7,6 +7,8 @@
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
         .prompt-box { background-color: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; margin: 15px 0; }
+        /* Adicionada a classe da Caixa Verde para o sucesso da IA */
+        .box-verde { background-color: #e8f5e9; color: #1b5e20; padding: 20px; border-radius: 8px; font-size: 16px; line-height: 1.6; white-space: pre-wrap; margin: 15px 0; border: 2px solid #4caf50; font-weight: 500; }
         .tabela-garmin { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
         .tabela-garmin th, .tabela-garmin td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .tabela-garmin th { background-color: #3498db; color: white; }
@@ -20,25 +22,25 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div style="padding: 10px; margin-bottom: 15px; border-radius: 5px; font-weight: bold; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;">{{ message }}</div>
+              <div style="padding: 10px; margin-bottom: 15px; border-radius: 5px; font-weight: bold; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">{{ message }}</div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
         {% if resposta %}
-        <p>Abaixo está o parecer do treinador e a prescrição gerados pela Inteligência Artificial (DeepSeek):</p>
-        <div class="prompt-box">{{ resposta }}</div>
+        <p>Parecer do treinador e prescrição (DeepSeek):</p>
+        <div class="box-verde">{{ resposta }}</div>
 
         <details style="margin-top: 15px; margin-bottom: 15px;">
-            <summary style="cursor: pointer; color: #555; font-weight: bold;">🔍 Ver prompt fisiológico enviado</summary>
+            <summary style="cursor: pointer; color: #555; font-weight: bold;">🔍 Ver prompt fisiológico enviado ao LLM</summary>
             <div class="prompt-box" style="font-size: 13px; margin-top: 8px; background-color: #34495e;">{{ prompt }}</div>
         </details>
         {% else %}
-        <p>Abaixo está a instrução fisiológica gerada a partir dos dados do seu Garmin e que será processada pela Inteligência Artificial:</p>
+        <p>Abaixo está a instrução fisiológica gerada, mas a IA não pôde responder no momento:</p>
         <div class="prompt-box">{{ prompt }}</div>
         {% endif %}
 
-        <h3>Pré-visualização dos Dados Lidos (Pandas)</h3>
+        <h3>Pré-visualização Segura dos Dados Lidos (Pandas)</h3>
         <div style="overflow-x: auto;">
             {{ tabela | safe }}
         </div>

@@ -7,18 +7,22 @@ import csv
 import html
 from datetime import datetime
 from dotenv import load_dotenv
+import markdown
+from markupsafe import Markup
 
 # Carrega as variáveis de ambiente do arquivo .env
 load_dotenv()
 
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+# Lemos a chave da Groq do ficheiro .env
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 try:
     from openai import OpenAI
     HAS_OPENAI = True
+    # Configuramos o cliente para usar os servidores da Groq em vez da OpenAI ou DeepSeek
     client = OpenAI(
-        api_key=DEEPSEEK_API_KEY,
-        base_url="https://api.deepseek.com"
+        api_key=GROQ_API_KEY,
+        base_url="https://api.groq.com/openai/v1"
     )
 except Exception:
     OpenAI = None
@@ -54,7 +58,6 @@ def carregar_dados_usuario():
     return {"ultimo_teste_cooper": None, "historico_vam": []}
 
 # --- MITIGAÇÃO OWASP: Controle de Acesso Quebrado ---
-# Decorador para proteger rotas internas garantindo que apenas usuários com sessão ativa acessem
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -71,7 +74,7 @@ def login():
         usuario = request.form.get('usuario')
         senha = request.form.get('senha')
         
-        # Mitigação OWASP (Injeção): Validação estrita sem concatenação de strings em banco de dados
+        # Mitigação OWASP (Injeção): Validação estrita sem concatenação
         if usuario == 'admin' and senha == 'triatlo2026':
             session['logado'] = True
             return redirect('/')
@@ -176,50 +179,93 @@ def upload_file():
                 tb_html = "".join("<tr>" + "".join(f"<td>{html.escape(str(cell))}</td>" for cell in r) + "</tr>" for r in data_rows)
                 tabela_html = f'<table class="tabela-garmin"><thead><tr>{th_html}</tr></thead><tbody>{tb_html}</tbody></table>'
             
-            prompt_ia = f"""
-Atue como um treinador especialista em periodização de triatlo e corrida.
-O atleta submeteu os seguintes dados executados:
+            # --- LÓGICA DE NEGÓCIO E PROMPTS MESTRES ---
+            dados_usuario = carregar_dados_usuario()
+            
+            if not dados_usuario.get("ultimo_teste_cooper"):
+                prompt_ia = f"""
+Atue como um treinador especialista em periodização de corrida e triatlo.
+O atleta realizou um Teste de Cooper inicial com os seguintes resultados:
 - Distância: {distancia_total} km
 - Frequência Cardíaca Máxima: {fc_maxima} bpm
 - Frequência Cardíaca Média: {fc_media} bpm
 
-Analise o cumprimento das zonas de intensidade:
-Regra 1: Se os batimentos indicarem fadiga excessiva, sugira um microciclo regenerativo mantendo o esforço estritamente na Zona Z2.
-Regra 2: Se o volume e os paces nas zonas Z2 e Z4 foram cumpridos com eficiência, aplique sobrecarga progressiva e aumente o volume do próximo longão em 10%.
-Gere a nova planilha da semana.
+O objetivo principal do atleta é concluir provas de longa distância.
+Ele tem disponibilidade para treinar 4 dias por semana.
+Inicie a contagem de um macrociclo de 90 dias a partir de hoje.
+Com base nestes dados fisiológicos, gere a primeira planilha semanal de treinos dividindo os dias em tiros, regenerativo e longão.
+Regra do Sistema: Informe ao atleta que esta planilha cobrirá toda a semana e uma nova rotina só será recalculada no próximo domingo.
+"""
+                dados_usuario["ultimo_teste_cooper"] = datetime.now().strftime("%Y-%m-%d")
+                with open(ARQUIVO_USUARIO, 'w') as f:
+                    json.dump(dados_usuario, f)
+            else:
+                prompt_ia = f"""
+Atue como um treinador especialista em periodização. 
+Dados: {distancia_total} km | FC Máx: {fc_maxima} bpm | FC Média: {fc_media} bpm.
+
+Aplique estas duas regras:
+Regra 1: Se a FC Média indicar fadiga excessiva, sugira microciclo regenerativo focado em Z2.
+Regra 2: Se o treino foi eficiente, aplique sobrecarga de 10% no volume do próximo treino longo.
+
+DIRETRIZ ESTRITA DE RESPOSTA (ECONOMIA DE TOKENS):
+1. Dê o diagnóstico e a regra aplicada em no máximo 3 frases curtas. Não explique cálculos matemáticos.
+2. Vá diretamente para a geração da tabela Markdown contendo os 7 dias da próxima semana.
+3. Não escreva nenhuma introdução, conclusão ou nota de rodapé após a tabela. 
 """
 
-            # Conexão com a API do DeepSeek usando a biblioteca openai (modelo 'deepseek-chat')
+            # Conexão com a API da Groq (Modelo Qwen)
+            # --- SISTEMA DE CONTINGÊNCIA (FALLBACK AUTOMÁTICO) ---
+            modelos_seguros = [
+                "qwen/qwen3.8-27b",
+                "openai/gpt-oss-20b"
+            ]
+            
             analise_ia = None
-            try:
-                if HAS_OPENAI and client is not None:
-                    resposta = client.chat.completions.create(
-                        model="deepseek-chat",
-                        messages=[
-                            {"role": "user", "content": prompt_ia}
-                        ]
-                    )
-                    analise_ia = resposta.choices[0].message.content
-                else:
-                    import urllib.request
-                    req = urllib.request.Request(
-                        "https://api.deepseek.com/chat/completions",
-                        headers={
-                            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-                            "Content-Type": "application/json"
-                        },
-                        data=json.dumps({
-                            "model": "deepseek-chat",
-                            "messages": [{"role": "user", "content": prompt_ia}]
-                        }).encode("utf-8")
-                    )
-                    with urllib.request.urlopen(req, timeout=30) as resp:
-                        dados_resp = json.loads(resp.read().decode("utf-8"))
-                        analise_ia = dados_resp["choices"][0]["message"]["content"]
-            except Exception as e_ia:
-                flash(f'Aviso da API DeepSeek: {str(e_ia)}', 'error')
+            
+            for modelo_tentativa in modelos_seguros:
+                try:
+                    if HAS_OPENAI and client is not None:
+                        resposta = client.chat.completions.create(
+                            model=modelo_tentativa,
+                            messages=[{"role": "user", "content": prompt_ia}],
+                            max_tokens=980
+                        )
+                        analise_ia = resposta.choices[0].message.content
+                        break  # Sucesso! Interrompe a busca por outros modelos.
+                    else:
+                        import urllib.request
+                        req = urllib.request.Request(
+                            "https://api.groq.com/openai/v1/chat/completions",
+                            headers={
+                                "Authorization": f"Bearer {GROQ_API_KEY}",
+                                "Content-Type": "application/json"
+                            },
+                            data=json.dumps({
+                                "model": modelo_tentativa,
+                                "messages": [{"role": "user", "content": prompt_ia}],
+                                "max_tokens": 980
+                            }).encode("utf-8")
+                        )
+                        with urllib.request.urlopen(req, timeout=30) as resp:
+                            dados_resp = json.loads(resp.read().decode("utf-8"))
+                            analise_ia = dados_resp["choices"][0]["message"]["content"]
+                            break  # Sucesso! Interrompe a busca por outros modelos.
+                            
+                except Exception as e_ia:
+                    print(f"Aviso interno: Falha no modelo {modelo_tentativa}. A tentar o próximo da lista...")
+                    continue 
 
-            return render_template('analise.html', prompt=prompt_ia, resposta=analise_ia, tabela=tabela_html)
+            if not analise_ia:
+                flash('Aviso do Sistema: As redes de Inteligência Artificial estão indisponíveis no momento.', 'error')
+
+            # Converte o texto Markdown da IA para formatação HTML real no Flask
+            if analise_ia:
+                analise_html = Markup(markdown.markdown(analise_ia, extensions=['tables']))
+            else:
+                analise_html = None
+
+            return render_template('analise.html', prompt=prompt_ia, resposta=analise_html, tabela=tabela_html)
             
         except Exception as e:
             flash(f'Erro ao processar os dados da planilha: {str(e)}', 'error')

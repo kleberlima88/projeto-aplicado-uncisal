@@ -5,6 +5,7 @@
     <title>Diário de Triatlo - Treinamento</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .nav-superior { max-width: 600px; margin: 0 auto 15px auto; text-align: right; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 600px; margin: auto; text-align: center; }
         .btn { padding: 15px 20px; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; margin-top: 10px; }
         .btn-cooper { background-color: #e74c3c; } 
@@ -18,7 +19,42 @@
 </head>
 <body>
     
-    <a href="/logout" style="float: right; color: red; text-decoration: none; font-weight: bold;">Sair (Logout)</a>
+    <div class="nav-superior">
+        <a href="/logout" style="color: red; text-decoration: none; font-weight: bold;">Sair (Logout)</a>
+    </div>
 
     <div class="card">
         <h2>Seu Painel de Treinamento</h2>
+        <p><strong>Status:</strong> {{ mensagem_status }}</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash-msg {% if category == 'error' %}flash-error{% else %}flash-success{% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% if precisa_novo_teste %}
+        <div class="regras-cooper">
+            <strong>⚠️ Calibração Necessária:</strong> Faça o upload do seu Teste de Cooper de 12 minutos (formato .csv do Garmin) para definirmos suas zonas cardíacas iniciais.
+        </div>
+        {% endif %}
+
+        <form action="/upload" method="POST" enctype="multipart/form-data">
+            <div class="upload-area">
+                <input type="file" name="file" accept=".csv" required>
+            </div>
+            
+            {% if precisa_novo_teste %}
+                <button type="submit" class="btn btn-cooper">Processar Teste de Cooper</button>
+            {% else %}
+                <button type="submit" class="btn btn-rotina">Analisar Treino da Semana</button>
+            {% endif %}
+        </form>
+    </div>
+
+</body>
+</html>
