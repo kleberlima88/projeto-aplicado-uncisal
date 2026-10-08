@@ -18,8 +18,8 @@ jobs:
           envs: GROQ_API_KEY
           script: |
             cd /home/ubuntu/projeto-aplicado-uncisal
-            git remote set-url origin https://github.com/kleberlima88/projeto-aplicado-uncisal.git
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/main
             /home/ubuntu/projeto-aplicado-uncisal/venv/bin/pip install -r requirements.txt
             echo "GROQ_API_KEY=$GROQ_API_KEY" > .env
             sudo systemctl restart diario-triatlo.service
