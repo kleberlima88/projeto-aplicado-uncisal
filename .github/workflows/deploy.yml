@@ -21,5 +21,7 @@ jobs:
             git fetch origin
             git reset --hard origin/main
             /home/ubuntu/projeto-aplicado-uncisal/venv/bin/pip install -r requirements.txt
-            echo "GROQ_API_KEY=$GROQ_API_KEY" > .env
+            echo "SECRET_KEY=chave_super_secreta_triatlo_2026" > .env
+            echo "GROQ_API_KEY=$GROQ_API_KEY" >> .env
             sudo systemctl restart diario-triatlo.service
+            sudo journalctl -u diario-triatlo.service -n 30 --no-pager
