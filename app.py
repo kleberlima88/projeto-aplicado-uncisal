@@ -5,6 +5,9 @@ import os
 import json
 import csv
 import html
+import hmac
+import uuid
+from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import datetime
 from dotenv import load_dotenv
 import markdown
@@ -37,7 +40,10 @@ except Exception:
     HAS_PANDAS = False
 
 app = Flask(__name__)
-app.secret_key = "chave_super_secreta_projeto_uncisal" 
+# Mitigação OWASP: Chave dinâmica via ambiente para evitar exposição no código
+app.secret_key = os.getenv("SECRET_KEY", "chave_super_secreta_projeto_uncisal_fallback")
+# Mitigação OWASP: Confiar no proxy Nginx (evita IP Spoofing no Rate Limiting)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # --- CINTURÃO DE SEGURANÇA (OWASP TOP 10) ---
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024 
@@ -45,6 +51,12 @@ ALLOWED_EXTENSIONS = {'csv'}
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Mitigação OWASP: Tratamento de exceção para ficheiros demasiado grandes
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    flash('Bloqueio de Segurança: O arquivo enviado excede o limite máximo permitido de 2MB.', 'error')
+    return redirect('/')
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -67,18 +79,44 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+TENTATIVAS_FALHAS = {}
+
+def obter_ip_cliente():
+    return request.remote_addr or '127.0.0.1'
+
 # --- ROTAS DE AUTENTICAÇÃO (EIXO 3) ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        usuario = request.form.get('usuario')
-        senha = request.form.get('senha')
+    ip = obter_ip_cliente()
+    agora = datetime.now().timestamp()
+    
+    # Bloqueio de Força Bruta: Limpar tentativas antigas (janela de 5 minutos = 300s)
+    if ip in TENTATIVAS_FALHAS and (agora - TENTATIVAS_FALHAS[ip]['tempo']) > 300:
+        del TENTATIVAS_FALHAS[ip]
         
-        # Mitigação OWASP (Injeção): Validação estrita sem concatenação
-        if usuario == 'admin' and senha == 'triatlo2026':
+    if ip in TENTATIVAS_FALHAS and TENTATIVAS_FALHAS[ip]['count'] >= 4:
+        return "Too Many Requests - Bloqueio de Segurança Temporário", 429
+
+    if request.method == 'POST':
+        usuario = request.form.get('usuario', '')
+        senha = request.form.get('senha', '')
+        
+        ADMIN_USER = os.getenv("ADMIN_USER", "admin")
+        ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "triatlo2026")
+        
+        # Mitigação OWASP: Comparação resistente a timing attacks
+        if hmac.compare_digest(usuario, ADMIN_USER) and hmac.compare_digest(senha, ADMIN_PASSWORD):
+            session.clear() # Mitigação Session Fixation
             session['logado'] = True
+            if ip in TENTATIVAS_FALHAS:
+                del TENTATIVAS_FALHAS[ip]
             return redirect('/')
         else:
+            if ip not in TENTATIVAS_FALHAS:
+                TENTATIVAS_FALHAS[ip] = {'count': 1, 'tempo': agora}
+            else:
+                TENTATIVAS_FALHAS[ip]['count'] += 1
+                TENTATIVAS_FALHAS[ip]['tempo'] = agora
             flash('Credenciais inválidas. Tente novamente.', 'error')
             
     return render_template('login.html')
@@ -125,14 +163,15 @@ def upload_file():
         return redirect('/')
     
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
+        # Mitigação OWASP: Gerar nome de ficheiro único para evitar vulnerabilidade de sobrescrita
+        nome_seguro = secure_filename(file.filename)
+        filename = f"{uuid.uuid4().hex}_{nome_seguro}"
         caminho_salvo = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(caminho_salvo)
         
         try:
             if HAS_PANDAS and pd is not None:
                 df = pd.read_csv(caminho_salvo)
-                # CORREÇÃO: Ignorar a linha de 'Resumo' para não duplicar os valores
                 df_laps = df[df['Voltas'].astype(str).str.lower() != 'resumo']
                 
                 distancia_total = f"{df_laps['Distância'].sum():.2f}" if 'Distância' in df.columns else "8.00"
@@ -165,7 +204,6 @@ def upload_file():
                     except (ValueError, AttributeError):
                         return None
 
-                # CORREÇÃO: Ignorar a linha de 'Resumo' no fallback sem Pandas
                 all_data = [r for r in rows[1:] if len(r) > 0 and str(r[0]).strip().lower() != 'resumo']
                 
                 dists = [parse_num(r[dist_idx]) for r in all_data if dist_idx is not None and dist_idx < len(r)]
@@ -184,7 +222,6 @@ def upload_file():
                 tb_html = "".join("<tr>" + "".join(f"<td>{html.escape(str(cell))}</td>" for cell in r) + "</tr>" for r in data_rows)
                 tabela_html = f'<table class="tabela-garmin"><thead><tr>{th_html}</tr></thead><tbody>{tb_html}</tbody></table>'
             
-            # --- LÓGICA DE NEGÓCIO E PROMPTS MESTRES ---
             tipo_treino = request.form.get('tipo_treino')
             dados_usuario = carregar_dados_usuario()
             
@@ -204,7 +241,6 @@ OBRIGATÓRIO NA TABELA PARA CADA DIA:
 2. Duração exata do treino (Ex: 45 min, 1h30).
 3. Pace médio sugerido com base neste teste (Ex: 6'40"/km a 7'10"/km).
 """
-                # Atualiza a data para o sistema saber que o teste foi feito hoje
                 dados_usuario["ultimo_teste_cooper"] = datetime.now().strftime("%Y-%m-%d")
                 with open(ARQUIVO_USUARIO, 'w', encoding='utf-8') as f:
                     json.dump(dados_usuario, f, ensure_ascii=False)
@@ -223,8 +259,6 @@ OBRIGATÓRIO NA TABELA (Crie colunas específicas):
 Zona Alvo, Duração exata (ex: 50 min) e Pace Médio Sugerido (ex: 5'50" a 6'10"/km).
 """
 
-            # Conexão com a API da Groq (Modelo Qwen)
-            # --- SISTEMA DE CONTINGÊNCIA (FALLBACK AUTOMÁTICO) ---
             modelos_seguros = [
                 "qwen/qwen3.8-27b",
                 "openai/gpt-oss-20b"
@@ -241,7 +275,7 @@ Zona Alvo, Duração exata (ex: 50 min) e Pace Médio Sugerido (ex: 5'50" a 6'10
                             max_tokens=2048
                         )
                         analise_ia = resposta.choices[0].message.content
-                        break  # Sucesso! Interrompe a busca por outros modelos.
+                        break 
                     else:
                         import urllib.request
                         req = urllib.request.Request(
@@ -259,7 +293,7 @@ Zona Alvo, Duração exata (ex: 50 min) e Pace Médio Sugerido (ex: 5'50" a 6'10
                         with urllib.request.urlopen(req, timeout=30) as resp:
                             dados_resp = json.loads(resp.read().decode("utf-8"))
                             analise_ia = dados_resp["choices"][0]["message"]["content"]
-                            break  # Sucesso! Interrompe a busca por outros modelos.
+                            break 
                             
                 except Exception as e_ia:
                     print(f"Aviso interno: Falha no modelo {modelo_tentativa}. A tentar o próximo da lista...")
@@ -268,12 +302,10 @@ Zona Alvo, Duração exata (ex: 50 min) e Pace Médio Sugerido (ex: 5'50" a 6'10
             if not analise_ia:
                 flash('Aviso do Sistema: As redes de Inteligência Artificial estão indisponíveis no momento.', 'error')
 
-            # Converte o texto Markdown da IA para formatação HTML real no Flask
             if analise_ia:
                 html_gerado = markdown.markdown(analise_ia, extensions=['tables'])
                 analise_html = Markup(html_gerado)
                 
-                # MEMÓRIA: Salva o último treino para o botão "Ver Planilha" funcionar sem upload
                 dados_usuario = carregar_dados_usuario()
                 dados_usuario["ultimo_treino_html"] = html_gerado
                 dados_usuario["ultimo_prompt"] = prompt_ia
@@ -293,7 +325,6 @@ Zona Alvo, Duração exata (ex: 50 min) e Pace Médio Sugerido (ex: 5'50" a 6'10
         flash('Bloqueio de Segurança: Apenas arquivos .csv são permitidos.', 'error')
         return redirect('/')
 
-# --- NOVA ROTA: Visualizar Treino Memorizado ---
 @app.route('/treino_atual')
 @login_required
 def treino_atual():
@@ -308,7 +339,4 @@ def treino_atual():
         return redirect('/')
 
 if __name__ == '__main__':
-    # Mitigação OWASP (Security Misconfiguration): debug desativado para produção
     app.run(debug=False)
-# --- FIM DO CÓDIGO ---
-# Versao final
