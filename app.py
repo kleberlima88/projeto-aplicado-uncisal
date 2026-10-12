@@ -311,3 +311,4 @@ if __name__ == '__main__':
     # Mitigação OWASP (Security Misconfiguration): debug desativado para produção
     app.run(debug=False)
 # --- FIM DO CÓDIGO ---
+# Versao final
