@@ -4,22 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Diário de Triatlo</title>
-    <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f4f9; margin: 0; }
-        .login-container { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
-        button { background-color: #007BFF; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; width: 95%; font-size: 16px; }
-        button:hover { background-color: #0056b3; }
-        .mensagens { color: red; margin-bottom: 15px; }
-    </style>
+    <!-- Aqui estamos conectando aquele arquivo CSS que você criou na pasta static -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="login-container">
-        <h2>Diário de Triatlo</h2>
         
+        <!-- A Logo do seu projeto (lembre-se de usar a extensão correta que você salvou, .png ou .jpg) -->
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Diário de Triatlo" class="logo-login">
+        
+        <!-- AVISOS DO FLASK (Não mexer): Isso exibe a mensagem de "Credenciais inválidas" que vem do app.py -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
-            <div class="mensagens">
+            <div class="mensagem-alerta">
               {% for category, message in messages %}
                 <p>{{ message }}</p>
               {% endfor %}
@@ -27,11 +24,17 @@
           {% endif %}
         {% endwith %}
 
+        <!-- O Formulário de Login que envia os dados para o Python validar -->
         <form action="/login" method="POST">
-            <input type="text" name="usuario" placeholder="Usuário" required>
-            <input type="password" name="senha" placeholder="Senha" required>
-            <button type="submit">Entrar no Sistema</button>
+            <div class="input-group">
+                <input type="text" name="usuario" placeholder="Usuário" required>
+            </div>
+            <div class="input-group">
+                <input type="password" name="senha" placeholder="Senha" required>
+            </div>
+            <button type="submit" class="btn-entrar">Entrar no Sistema</button>
         </form>
+        
     </div>
 </body>
 </html>

@@ -3,45 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <title>Análise do Treino - IA</title>
+    <!-- Fonte Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
-        .prompt-box { background-color: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; margin: 15px 0; }
-        /* Adicionada a classe da Caixa Verde para o sucesso da IA */
-        .box-verde { background-color: #e8f5e9; color: #1b5e20; padding: 20px; border-radius: 8px; font-size: 16px; line-height: 1.6; white-space: pre-wrap; margin: 15px 0; border: 2px solid #4caf50; font-weight: 500; }
-        .tabela-garmin { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-        .tabela-garmin th, .tabela-garmin td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .tabela-garmin th { background-color: #3498db; color: white; }
-        .btn-voltar { display: inline-block; padding: 10px 15px; background-color: #95a5a6; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+        /* Fundo fotográfico padronizado */
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-image: url("{{ url_for('static', filename='img/fundo-login.jpg') }}"); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #ffffff;
+        }
+        
+        /* Caixa escura central expandida para a tabela caber bem */
+        .card { 
+            background-color: rgba(22, 27, 40, 0.95); 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            max-width: 900px; 
+            margin: auto; 
+        }
+
+        /* Logótipo no topo centralizado */
+        .logo-analise {
+            display: block;
+            max-width: 220px;
+            margin: 0 auto 20px auto;
+        }
+
+        h2, h3 { color: #00c8ff; text-align: center; margin-top: 0; }
+        
+        p { color: #d1d8e0; text-align: center; font-weight: 500; }
+
+        /* Caixa verde do treinador virtual adaptada para modo escuro */
+        .box-verde { 
+            background-color: rgba(46, 204, 113, 0.15); 
+            color: #4cd137; 
+            padding: 20px; 
+            border-radius: 8px; 
+            font-size: 15px; 
+            line-height: 1.6; 
+            white-space: pre-wrap; 
+            margin: 15px 0; 
+            border: 1px solid #2ecc71; 
+            font-weight: 500; 
+        }
+
+        /* Prompt box escuro (oculto no botão) */
+        .prompt-box { 
+            background-color: #121622; 
+            color: #8b99b5; 
+            padding: 15px; 
+            border-radius: 8px; 
+            font-family: monospace; 
+            white-space: pre-wrap; 
+            margin: 15px 0;
+            border: 1px solid #3a4760;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        /* Tabela Garmin adaptada para tema escuro */
+        .tabela-garmin { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px; 
+            font-size: 14px; 
+            color: #ffffff;
+        }
+        .tabela-garmin th, .tabela-garmin td { 
+            border: 1px solid #3a4760; 
+            padding: 10px; 
+            text-align: left; 
+        }
+        .tabela-garmin th { 
+            background-color: #00c8ff; 
+            color: #161b28; 
+            font-weight: 700;
+        }
+        .tabela-garmin tr:nth-child(even) { background-color: rgba(255,255,255,0.05); }
+        
+        /* Detalhes (Menu expansível do prompt) */
+        details summary { cursor: pointer; color: #ff5500; font-weight: bold; padding: 10px 0; text-align: center; }
+        details summary:hover { color: #e04a00; }
+
+        /* Botão de voltar padronizado a Laranja */
+        .btn-voltar { 
+            display: block; 
+            width: fit-content;
+            margin: 30px auto 10px auto;
+            padding: 12px 25px; 
+            background-color: #ff5500; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            transition: 0.3s; 
+            text-align: center;
+        }
+        .btn-voltar:hover { background-color: #e04a00; transform: scale(0.98); }
     </style>
 </head>
 <body>
 
     <div class="card">
+        <!-- Inserção do logótipo -->
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Diário de Triatlo" class="logo-analise">
+
         <h2>🧠 Análise do Treinador Virtual (IA)</h2>
+        
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div style="padding: 10px; margin-bottom: 15px; border-radius: 5px; font-weight: bold; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">{{ message }}</div>
+              <div style="padding: 12px; margin-bottom: 15px; border-radius: 5px; font-weight: bold; background-color: rgba(231, 76, 60, 0.2); color: #ff4d4d; border: 1px solid #e74c3c; text-align: center;">{{ message }}</div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
         {% if resposta %}
-        <p>Parecer do treinador e prescrição (DeepSeek):</p>
+        <p>Parecer do treinador e prescrição (IA):</p>
         <div class="box-verde">{{ resposta }}</div>
 
-        <details style="margin-top: 15px; margin-bottom: 15px;">
-            <summary style="cursor: pointer; color: #555; font-weight: bold;">🔍 Ver prompt fisiológico enviado ao LLM</summary>
-            <div class="prompt-box" style="font-size: 13px; margin-top: 8px; background-color: #34495e;">{{ prompt }}</div>
+        <details style="margin-top: 15px; margin-bottom: 25px;">
+            <summary>🔍 Ver prompt fisiológico enviado ao LLM</summary>
+            <div class="prompt-box">{{ prompt }}</div>
         </details>
         {% else %}
         <p>Abaixo está a instrução fisiológica gerada, mas a IA não pôde responder no momento:</p>
         <div class="prompt-box">{{ prompt }}</div>
         {% endif %}
 
-        <h3>Pré-visualização Segura dos Dados Lidos (Pandas)</h3>
-        <div style="overflow-x: auto;">
+        <h3>Pré-visualização Segura dos Dados Lidos</h3>
+        <div style="overflow-x: auto; border-radius: 8px; margin-top: 15px;">
             {{ tabela | safe }}
         </div>
 

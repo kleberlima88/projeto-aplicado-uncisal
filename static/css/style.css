@@ -1,0 +1,104 @@
+/* =========================================
+   DIÁRIO DE TRIATLO - ESTILOS DA TELA DE LOGIN
+   ========================================= */
+
+/* 1. Importando a Fonte Esportiva (Montserrat) direto no CSS */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap');
+
+/* 2. Configurações Gerais da Página (Fundo e Fonte) */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Montserrat', sans-serif;
+    /* Puxando a imagem de fundo que você salvou na pasta img */
+    background-image: url('../img/fundo-login.jpg'); 
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 100vh; /* Ocupa 100% da altura da tela */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 3. A Caixa Escura Central (Container do Formulário) */
+.login-container {
+    background-color: rgba(22, 27, 40, 0.95); /* Azul marinho/Escuro quase sólido */
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+}
+
+/* 4. A Logo do Triatlo */
+.logo-login {
+    max-width: 280px; /* Ajusta o tamanho da logo */
+    margin-bottom: 5px;
+}
+
+/* 5. Mensagem de Alerta (Acesso negado, etc) */
+.mensagem-alerta {
+    color: #ff4d4d;
+    font-size: 14px;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+/* 6. Espaçamento dos Campos de Usuário e Senha */
+.input-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+/* 7. Estilo das Caixas de Texto (Inputs) */
+.input-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #3a4760; /* Borda cinza/azulada */
+    border-radius: 8px;
+    background-color: #1e2638; /* Fundo do input escuro */
+    color: #ffffff; /* Texto que o usuário digita em branco */
+    font-size: 15px;
+    font-family: 'Montserrat', sans-serif;
+    box-sizing: border-box; 
+}
+
+/* Cor do texto descritivo dentro do input (ex: "Usuário") */
+.input-group input::placeholder {
+    color: #8b99b5;
+}
+
+/* Efeito quando clica para digitar no campo */
+.input-group input:focus {
+    outline: none;
+    border-color: #ff5500;
+    box-shadow: 0 0 5px rgba(255, 85, 0, 0.3);
+}
+
+/* 8. O Botão Laranja "Entrar no Sistema" */
+.btn-entrar {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    background-color: #ff5500; /* Laranja vibrante */
+    color: #ffffff;
+    border: none;
+    padding: 14px 24px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+/* Efeito ao passar o mouse no botão */
+.btn-entrar:hover {
+    background-color: #e04a00;
+}
+
+/* Efeito de "apertar" o botão ao clicar */
+.btn-entrar:active {
+    transform: scale(0.98);
+}

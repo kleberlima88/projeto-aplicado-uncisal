@@ -3,27 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <title>Diário de Triatlo - Treinamento</title>
+    <!-- Importar a mesma fonte desportiva do login -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9; }
-        .nav-superior { max-width: 600px; margin: 0 auto 15px auto; text-align: right; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 600px; margin: auto; text-align: center; }
-        .btn { padding: 15px 20px; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; margin-top: 10px; }
+        /* Fundo fotográfico com a mesma imagem do login */
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-image: url("{{ url_for('static', filename='img/fundo-login.jpg') }}"); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #ffffff; /* Letras brancas por defeito */
+        }
+        
+        .nav-superior { 
+            max-width: 600px; 
+            margin: 0 auto 15px auto; 
+            text-align: right; 
+        }
+        
+        /* Botão de Sair adaptado para o fundo escuro */
+        .nav-superior a {
+            color: #ff5500; 
+            text-decoration: none; 
+            font-weight: bold;
+            background-color: rgba(22, 27, 40, 0.8);
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        .nav-superior a:hover {
+            background-color: #ff5500;
+            color: #ffffff;
+        }
+
+        /* Caixa escura (semelhante à do login) para destacar o logótipo */
+        .card { 
+            background-color: rgba(22, 27, 40, 0.95); 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            max-width: 600px; 
+            margin: auto; 
+            text-align: center; 
+        }
+        
+        /* O logótipo no topo do painel */
+        .logo-painel {
+            max-width: 260px;
+            margin-bottom: 15px;
+        }
+
+        .card h2 {
+            color: #00c8ff; /* Azul ciano do projeto */
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        /* Botões padronizados */
+        .btn { 
+            padding: 15px 20px; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-family: 'Montserrat', sans-serif;
+            font-weight: bold; 
+            width: 100%; 
+            margin-top: 15px; 
+            transition: 0.3s;
+        }
+        .btn:hover { opacity: 0.9; transform: scale(0.98); }
         .btn-cooper { background-color: #e74c3c; } 
-        .btn-rotina { background-color: #2ecc71; } 
-        .upload-area { margin: 20px 0; padding: 15px; border: 2px dashed #ccc; background-color: #fafafa; border-radius: 5px; }
-        .flash-msg { padding: 10px; margin-bottom: 15px; border-radius: 5px; font-weight: bold; }
-        .flash-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .flash-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .regras-cooper { background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; border: 1px solid #ffeeba; text-align: left; font-size: 14px; margin-bottom: 20px;}
+        .btn-rotina { background-color: #ff5500; } /* Laranja do projeto */
+        
+        /* Área para carregar o ficheiro CSV */
+        .upload-area { 
+            margin: 20px 0; 
+            padding: 20px; 
+            border: 2px dashed #3a4760; 
+            background-color: #1e2638; 
+            border-radius: 8px; 
+            color: #8b99b5;
+        }
+
+        /* Alertas visuais adaptados ao fundo escuro */
+        .flash-msg { padding: 12px; margin-bottom: 15px; border-radius: 5px; font-weight: bold; }
+        .flash-success { background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; }
+        .flash-error { background-color: rgba(231, 76, 60, 0.2); color: #ff4d4d; border: 1px solid #e74c3c; }
+        
+        .regras-cooper { 
+            background-color: rgba(255, 193, 7, 0.15); 
+            color: #ffeb3b; 
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 1px solid #ffc107; 
+            text-align: left; 
+            font-size: 14px; 
+            margin-bottom: 20px;
+        }
+
+        /* Estilos do Botão e do Pop-up (Modal) de Instruções */
+        .btn-instrucoes {
+            background-color: #ffc107;
+            color: #161b28;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+        .btn-instrucoes:hover { background-color: #e0a800; transform: scale(0.98); }
+
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; top: 0; 
+            width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.8); 
+            align-items: center; 
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #2a3449;
+            color: #ffffff;
+            padding: 25px;
+            border: 1px solid #3a4760;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+        .close-btn {
+            color: #ff5555;
+            position: absolute;
+            top: 10px; right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-btn:hover { color: #ff0000; }
+        .modal-content p { color: #d1d8e0; font-size: 14px; line-height: 1.6; text-align: left; }
     </style>
 </head>
 <body>
     
     <div class="nav-superior">
-        <a href="/logout" style="color: red; text-decoration: none; font-weight: bold;">Sair (Logout)</a>
+        <a href="/logout">Sair (Logout)</a>
     </div>
 
     <div class="card">
+        <!-- O logótipo PNG que guardou inserido antes do título -->
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Diário de Triatlo" class="logo-painel">
+
         <h2>Seu Painel de Treinamento</h2>
         <p><strong>Status:</strong> {{ mensagem_status }}</p>
 
@@ -39,22 +178,68 @@
 
         {% if precisa_novo_teste %}
         <div class="regras-cooper">
-            <strong>⚠️ Calibração Necessária:</strong> Faça o upload do seu Teste de Cooper de 12 minutos (formato .csv do Garmin) para definirmos suas zonas cardíacas iniciais.
+            <p style="margin: 0;"><strong>⚠️ Calibração Necessária:</strong> Faça o upload do seu Teste de Cooper de 12 minutos (formato .csv do Garmin) para definirmos suas zonas cardíacas iniciais.</p>
         </div>
         {% endif %}
 
+        <!-- Botão de Instruções permanentemente visível, fora da condição -->
+        <div style="text-align: center; margin-bottom: 20px;">
+             <button type="button" class="btn-instrucoes" onclick="abrirModal()">ℹ️ Instruções de Preparação e Hidratação para o Teste de Cooper</button>
+        </div>
+
         <form action="/upload" method="POST" enctype="multipart/form-data">
             <div class="upload-area">
-                <input type="file" name="file" accept=".csv" required>
+                <p style="margin-bottom: 15px; color: #8b99b5; font-weight: bold;">1. Selecione o tipo de treino:</p>
+                
+                <select name="tipo_treino" style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 8px; background-color: #2a3449; color: white; border: 1px solid #3a4760; font-family: 'Montserrat', sans-serif; font-size: 15px; outline: none;">
+                    <option value="cooper">Novo Teste de Cooper (Iniciar Macrociclo)</option>
+                    <option value="rotina">Treino de Rotina (Continuar Macrociclo)</option>
+                </select>
+
+                <p style="margin-bottom: 15px; color: #8b99b5; font-weight: bold;">2. Anexe o arquivo do Garmin (.csv):</p>
+                <input type="file" name="file" accept=".csv" required style="width: 100%; color: white; margin-bottom: 10px;">
             </div>
             
-            {% if precisa_novo_teste %}
-                <button type="submit" class="btn btn-cooper">Processar Teste de Cooper</button>
-            {% else %}
-                <button type="submit" class="btn btn-rotina">Analisar Treino da Semana</button>
-            {% endif %}
+            <button type="submit" class="btn btn-rotina">Processar Treino na IA</button>
         </form>
+
+        <!-- NOVO BOTÃO PARA VER A PLANILHA MEMORIZADA SEM PRECISAR ENVIAR ARQUIVO DE NOVO -->
+        <hr style="border: 1px solid #3a4760; margin: 30px 0 20px 0;">
+        <p style="color: #8b99b5; font-size: 14px; margin-bottom: 10px;">Já processou seu treino esta semana?</p>
+        
+        <a href="/treino_atual" class="btn" style="background-color: #00c8ff; color: #161b28; display: block; text-decoration: none; box-sizing: border-box;">📅 Ver Planilha da Semana Atual</a>
+
     </div>
 
+    <!-- A CAIXA FLUTUANTE (MODAL) COM AS SUAS INSTRUÇÕES -->
+    <div id="modalCooper" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="fecharModal()">&times;</span>
+            <h3 style="color: #00c8ff; margin-top: 0;">Protocolo: Teste de Cooper</h3>
+            
+            <p><strong>1. Aquecimento e Hidratação:</strong> Inicie com 5 minutos de trote leve. É essencial manter a hidratação durante esta fase de preparação.</p>
+            <p><strong>2. Ativação:</strong> Realize 8 acelerações progressivas de 20 metros, regressando a caminhar após cada uma.</p>
+            <p><strong>3. Repouso:</strong> Descanse de 3 a 5 minutos para recuperação total antes de iniciar o esforço principal.</p>
+            <p><strong>4. A Execução (12 min):</strong> Escolha um local totalmente plano e sem interrupções. O objetivo é manter um esforço máximo, mas <strong>constante</strong>. Evite arrancar com muita força no início para não fadigar precocemente.</p>
+        </div>
+    </div>
+
+    <script>
+        // Função para abrir o Pop-up
+        function abrirModal() {
+            document.getElementById('modalCooper').style.display = 'flex';
+        }
+        // Função para fechar o Pop-up
+        function fecharModal() {
+            document.getElementById('modalCooper').style.display = 'none';
+        }
+        // Fechar ao clicar fora da caixa
+        window.onclick = function(event) {
+            var modal = document.getElementById('modalCooper');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
 </body>
 </html>

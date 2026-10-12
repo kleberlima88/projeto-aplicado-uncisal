@@ -53,7 +53,7 @@ ARQUIVO_USUARIO = 'dados_usuario.json'
 
 def carregar_dados_usuario():
     if os.path.exists(ARQUIVO_USUARIO):
-        with open(ARQUIVO_USUARIO, 'r') as f:
+        with open(ARQUIVO_USUARIO, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {"ultimo_teste_cooper": None, "historico_vam": []}
 
@@ -97,7 +97,7 @@ def painel_treinamento():
     precisa_novo_teste = False
     mensagem_status = ""
 
-    if not dados["ultimo_teste_cooper"]:
+    if not dados.get("ultimo_teste_cooper"):
         precisa_novo_teste = True
         mensagem_status = "Bem-vindo à periodização! Para iniciarmos, realize o Teste de Cooper de 12 minutos."
     else:
@@ -132,9 +132,12 @@ def upload_file():
         try:
             if HAS_PANDAS and pd is not None:
                 df = pd.read_csv(caminho_salvo)
-                distancia_total = df['Distância'].sum() if 'Distância' in df.columns else "8.00"
-                fc_maxima = df['FC Máxima'].max() if 'FC Máxima' in df.columns else "187"
-                fc_media = df['FC Média'].mean() if 'FC Média' in df.columns else "175"
+                # CORREÇÃO: Ignorar a linha de 'Resumo' para não duplicar os valores
+                df_laps = df[df['Voltas'].astype(str).str.lower() != 'resumo']
+                
+                distancia_total = f"{df_laps['Distância'].sum():.2f}" if 'Distância' in df.columns else "8.00"
+                fc_maxima = f"{int(df_laps['FC Máxima'].max())}" if 'FC Máxima' in df.columns else "187"
+                fc_media = f"{int(df_laps['FC Média'].mean())}" if 'FC Média' in df.columns else "175"
                 tabela_html = df.head().to_html(classes='tabela-garmin', escape=True)
             else:
                 encoding = "utf-8-sig"
@@ -162,7 +165,9 @@ def upload_file():
                     except (ValueError, AttributeError):
                         return None
 
-                all_data = rows[1:] if len(rows) > 1 else []
+                # CORREÇÃO: Ignorar a linha de 'Resumo' no fallback sem Pandas
+                all_data = [r for r in rows[1:] if len(r) > 0 and str(r[0]).strip().lower() != 'resumo']
+                
                 dists = [parse_num(r[dist_idx]) for r in all_data if dist_idx is not None and dist_idx < len(r)]
                 dists = [d for d in dists if d is not None]
                 distancia_total = f"{sum(dists):.2f}" if dists else "8.00"
@@ -180,9 +185,10 @@ def upload_file():
                 tabela_html = f'<table class="tabela-garmin"><thead><tr>{th_html}</tr></thead><tbody>{tb_html}</tbody></table>'
             
             # --- LÓGICA DE NEGÓCIO E PROMPTS MESTRES ---
+            tipo_treino = request.form.get('tipo_treino')
             dados_usuario = carregar_dados_usuario()
             
-            if not dados_usuario.get("ultimo_teste_cooper"):
+            if tipo_treino == 'cooper':
                 prompt_ia = f"""
 Atue como um treinador especialista em periodização de corrida e triatlo.
 O atleta realizou um Teste de Cooper inicial com os seguintes resultados:
@@ -191,27 +197,30 @@ O atleta realizou um Teste de Cooper inicial com os seguintes resultados:
 - Frequência Cardíaca Média: {fc_media} bpm
 
 O objetivo principal do atleta é concluir provas de longa distância.
-Ele tem disponibilidade para treinar 4 dias por semana.
 Inicie a contagem de um macrociclo de 90 dias a partir de hoje.
-Com base nestes dados fisiológicos, gere a primeira planilha semanal de treinos dividindo os dias em tiros, regenerativo e longão.
-Regra do Sistema: Informe ao atleta que esta planilha cobrirá toda a semana e uma nova rotina só será recalculada no próximo domingo.
+Gere a primeira planilha semanal de treinos dividindo os dias.
+OBRIGATÓRIO NA TABELA PARA CADA DIA: 
+1. Zona Cardíaca alvo (Ex: Z1, Z2, Z3).
+2. Duração exata do treino (Ex: 45 min, 1h30).
+3. Pace médio sugerido com base neste teste (Ex: 6'40"/km a 7'10"/km).
 """
+                # Atualiza a data para o sistema saber que o teste foi feito hoje
                 dados_usuario["ultimo_teste_cooper"] = datetime.now().strftime("%Y-%m-%d")
-                with open(ARQUIVO_USUARIO, 'w') as f:
-                    json.dump(dados_usuario, f)
+                with open(ARQUIVO_USUARIO, 'w', encoding='utf-8') as f:
+                    json.dump(dados_usuario, f, ensure_ascii=False)
             else:
                 prompt_ia = f"""
 Atue como um treinador especialista em periodização. 
-Dados: {distancia_total} km | FC Máx: {fc_maxima} bpm | FC Média: {fc_media} bpm.
+Dados do último treino lido: {distancia_total} km | FC Máx: {fc_maxima} bpm | FC Média: {fc_media} bpm.
 
-Aplique estas duas regras:
 Regra 1: Se a FC Média indicar fadiga excessiva, sugira microciclo regenerativo focado em Z2.
 Regra 2: Se o treino foi eficiente, aplique sobrecarga de 10% no volume do próximo treino longo.
 
-DIRETRIZ ESTRITA DE RESPOSTA (ECONOMIA DE TOKENS):
-1. Dê o diagnóstico e a regra aplicada em no máximo 3 frases curtas. Não explique cálculos matemáticos.
-2. Vá diretamente para a geração da tabela Markdown contendo os 7 dias da próxima semana.
-3. Não escreva nenhuma introdução, conclusão ou nota de rodapé após a tabela. 
+DIRETRIZ ESTRITA DE RESPOSTA:
+1. Dê o diagnóstico curto em no máximo 3 frases.
+2. Gere a tabela Markdown com os 7 dias da próxima semana.
+OBRIGATÓRIO NA TABELA (Crie colunas específicas): 
+Zona Alvo, Duração exata (ex: 50 min) e Pace Médio Sugerido (ex: 5'50" a 6'10"/km).
 """
 
             # Conexão com a API da Groq (Modelo Qwen)
@@ -229,7 +238,7 @@ DIRETRIZ ESTRITA DE RESPOSTA (ECONOMIA DE TOKENS):
                         resposta = client.chat.completions.create(
                             model=modelo_tentativa,
                             messages=[{"role": "user", "content": prompt_ia}],
-                            max_tokens=980
+                            max_tokens=2048
                         )
                         analise_ia = resposta.choices[0].message.content
                         break  # Sucesso! Interrompe a busca por outros modelos.
@@ -244,7 +253,7 @@ DIRETRIZ ESTRITA DE RESPOSTA (ECONOMIA DE TOKENS):
                             data=json.dumps({
                                 "model": modelo_tentativa,
                                 "messages": [{"role": "user", "content": prompt_ia}],
-                                "max_tokens": 980
+                                "max_tokens": 2048
                             }).encode("utf-8")
                         )
                         with urllib.request.urlopen(req, timeout=30) as resp:
@@ -261,7 +270,16 @@ DIRETRIZ ESTRITA DE RESPOSTA (ECONOMIA DE TOKENS):
 
             # Converte o texto Markdown da IA para formatação HTML real no Flask
             if analise_ia:
-                analise_html = Markup(markdown.markdown(analise_ia, extensions=['tables']))
+                html_gerado = markdown.markdown(analise_ia, extensions=['tables'])
+                analise_html = Markup(html_gerado)
+                
+                # MEMÓRIA: Salva o último treino para o botão "Ver Planilha" funcionar sem upload
+                dados_usuario = carregar_dados_usuario()
+                dados_usuario["ultimo_treino_html"] = html_gerado
+                dados_usuario["ultimo_prompt"] = prompt_ia
+                dados_usuario["ultima_tabela"] = tabela_html
+                with open(ARQUIVO_USUARIO, 'w', encoding='utf-8') as f:
+                    json.dump(dados_usuario, f, ensure_ascii=False)
             else:
                 analise_html = None
 
@@ -275,6 +293,21 @@ DIRETRIZ ESTRITA DE RESPOSTA (ECONOMIA DE TOKENS):
         flash('Bloqueio de Segurança: Apenas arquivos .csv são permitidos.', 'error')
         return redirect('/')
 
+# --- NOVA ROTA: Visualizar Treino Memorizado ---
+@app.route('/treino_atual')
+@login_required
+def treino_atual():
+    dados_usuario = carregar_dados_usuario()
+    if dados_usuario.get("ultimo_treino_html"):
+        analise_html = Markup(dados_usuario["ultimo_treino_html"])
+        tabela_html = Markup(dados_usuario.get("ultima_tabela", ""))
+        prompt_ia = dados_usuario.get("ultimo_prompt", "")
+        return render_template('analise.html', prompt=prompt_ia, resposta=analise_html, tabela=tabela_html)
+    else:
+        flash('Nenhuma planilha encontrada. Envie um arquivo CSV para gerar o seu primeiro treino.', 'error')
+        return redirect('/')
+
 if __name__ == '__main__':
     # Mitigação OWASP (Security Misconfiguration): debug desativado para produção
     app.run(debug=False)
+# --- FIM DO CÓDIGO ---
